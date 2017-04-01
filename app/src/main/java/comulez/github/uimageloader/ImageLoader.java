@@ -42,7 +42,7 @@ public class ImageLoader {
                     if (uri.equals(result.url)) {
                         imageView.setImageBitmap(result.bitmap);
                     } else {
-                        Log.w(TAG, "set image bitmap,but url has changed, ignored!");
+                        Log.e(TAG, "set image bitmap,but url has changed, ignored!");
                     }
                     break;
                 }
@@ -77,7 +77,15 @@ public class ImageLoader {
         return singleton;
     }
 
-    private Bitmap downloadBitmapFromUrl(String urlString) {
+    /**
+     * 这里下载和保存了原图，不应该直接用此bitmap设置到ImageView中去。
+     *
+     * @param urlString
+     * @param width
+     * @param height
+     * @return
+     */
+    private Bitmap downloadBitmapFromUrl(String urlString, int width, int height) {
         Bitmap bitmap = null;
         HttpURLConnection urlConnection = null;
         BufferedInputStream in = null;
@@ -85,7 +93,10 @@ public class ImageLoader {
             final URL url = new URL(urlString);
             urlConnection = (HttpURLConnection) url.openConnection();
             in = new BufferedInputStream(urlConnection.getInputStream(), IO_BUFFER_SIZE);
-            bitmap = BitmapFactory.decodeStream(in);
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inSampleSize = getSampleSize(BitmapFactory.decodeStream(in), width, height);//// TODO: 2017/4/1  不能decodeStream两次，如何获取BitmapFactory.Options?
+            bitmap = BitmapFactory.decodeStream(in, null, opts);
+//            bitmap = BitmapFactory.decodeStream(in);
         } catch (final IOException e) {
             Log.e(TAG, "Error in downloadBitmap: " + e);
         } finally {
@@ -95,6 +106,19 @@ public class ImageLoader {
             Utils.close(in);
         }
         return bitmap;
+    }
+
+    /**
+     *
+     * @param bitmap
+     * @param width
+     * @param height
+     * @return
+     */
+    private int getSampleSize(Bitmap bitmap, int width, int height) {
+//        bitmap.recycle();
+        int simpleSize = 1;
+        return simpleSize;
     }
 
     public ImageLoader url(final String url, final ImageView target) {
@@ -117,7 +141,8 @@ public class ImageLoader {
                     handler.obtainMessage(SUCCESS_COMPLETE, new LoaderResult(target, url, bitmap)).sendToTarget();
                     return;
                 } else {
-                    bitmap = downloadBitmapFromUrl(url);
+                    bitmap = downloadBitmapFromUrl(url, width, height);
+//                    Log.e("TAG", "Height=" + bitmap.getHeight() + ",Width=" + bitmap.getWidth());
                     if (bitmap != null) {
                         handler.obtainMessage(SUCCESS_COMPLETE, new LoaderResult(target, url, bitmap)).sendToTarget();
                         try {
