@@ -10,6 +10,6 @@ import java.io.IOException;
  */
 
 public interface IImageCacahe {
-    Bitmap getFromCache(String url);
+    Bitmap getFromCache(String url, int width, int height);
     void addToCache(Bitmap bitmap, String url) throws IOException;
 }

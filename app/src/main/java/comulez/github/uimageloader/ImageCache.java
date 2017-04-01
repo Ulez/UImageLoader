@@ -89,7 +89,8 @@ public class ImageCache implements IImageCacahe {
     }
 
     @Override
-    public Bitmap getFromCache(String url) {
+    public Bitmap getFromCache(String url, int width, int height) {
+        Log.e("LCY", "getFromCache,width=" + width + ",height=" + height);
         String key = keyFormUrl(url);
         Bitmap bitmap = lruCache.get(key);
         if (bitmap == null) {

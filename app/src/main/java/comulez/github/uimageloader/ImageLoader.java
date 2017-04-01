@@ -57,8 +57,8 @@ public class ImageLoader {
         cachedThreadPool = Executors.newCachedThreadPool();
     }
 
-    public ImageLoader setCache(IImageCacahe cache){
-        this.cache=cache;
+    public ImageLoader setCache(IImageCacahe cache) {
+        this.cache = cache;
         return this;
     }
 
@@ -99,10 +99,20 @@ public class ImageLoader {
 
     public ImageLoader url(final String url, final ImageView target) {
         target.setTag(TAG_KEY_URI, url);
+        target.post(new Runnable() {
+            @Override
+            public void run() {
+                taskDownImage(url, target, target.getMeasuredWidth(), target.getMeasuredHeight());
+            }
+        });
+        return this;
+    }
+
+    private void taskDownImage(final String url, final ImageView target, final int width, final int height) {
         cachedThreadPool.execute(new Runnable() {
             @Override
             public void run() {
-                Bitmap bitmap = cache.getFromCache(url);
+                Bitmap bitmap = cache.getFromCache(url, width, height);
                 if (bitmap != null) {
                     handler.obtainMessage(SUCCESS_COMPLETE, new LoaderResult(target, url, bitmap)).sendToTarget();
                     return;
@@ -119,7 +129,6 @@ public class ImageLoader {
                 }
             }
         });
-        return this;
     }
 
     static class LoaderResult {
