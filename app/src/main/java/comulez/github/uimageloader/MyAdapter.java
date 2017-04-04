@@ -52,7 +52,7 @@ public class MyAdapter extends BaseAdapter {
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
-        ImageLoader.getInstance(context).url(urls.get(position), holder.imageView);
+        ImageLoader.getInstance(context).defaultImg(R.drawable.image_default).error(R.drawable.load_error).url(urls.get(position), holder.imageView);
         return convertView;
     }
 

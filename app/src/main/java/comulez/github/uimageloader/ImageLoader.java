@@ -23,6 +23,9 @@ import java.util.concurrent.Executors;
 
 
 public class ImageLoader {
+
+    private int defaultImgRes = 0;
+    private static int errorImgRes = 0;
     private static ImageLoader singleton;
     private IImageCacahe cache;
     private final ExecutorService cachedThreadPool;
@@ -40,7 +43,12 @@ public class ImageLoader {
                     ImageView imageView = result.imageView;
                     String uri = (String) imageView.getTag(TAG_KEY_URI);
                     if (uri.equals(result.url)) {
-                        imageView.setImageBitmap(result.bitmap);
+                        if (result.bitmap != null)
+                            imageView.setImageBitmap(result.bitmap);
+                        else {
+                            if (errorImgRes != 0)
+                                imageView.setImageResource(errorImgRes);
+                        }
                     } else {
                         Log.e(TAG, "set image bitmap,but url has changed, ignored!");
                     }
@@ -122,6 +130,8 @@ public class ImageLoader {
     }
 
     public ImageLoader url(final String url, final ImageView target) {
+        if (defaultImgRes != 0)
+            target.setImageResource(defaultImgRes);
         target.setTag(TAG_KEY_URI, url);
         target.post(new Runnable() {
             @Override
@@ -143,17 +153,26 @@ public class ImageLoader {
                 } else {
                     bitmap = downloadBitmapFromUrl(url, width, height);
 //                    Log.e("TAG", "Height=" + bitmap.getHeight() + ",Width=" + bitmap.getWidth());
-                    if (bitmap != null) {
-                        handler.obtainMessage(SUCCESS_COMPLETE, new LoaderResult(target, url, bitmap)).sendToTarget();
-                        try {
+                    handler.obtainMessage(SUCCESS_COMPLETE, new LoaderResult(target, url, bitmap)).sendToTarget();
+                    try {
+                        if (bitmap != null)
                             cache.addToCache(bitmap, url);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
         });
+    }
+
+    public ImageLoader defaultImg(int image_default) {
+        defaultImgRes = image_default;
+        return this;
+    }
+
+    public ImageLoader error(int load_error) {
+        errorImgRes = load_error;
+        return this;
     }
 
     static class LoaderResult {
