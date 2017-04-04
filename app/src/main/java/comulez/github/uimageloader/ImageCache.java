@@ -2,14 +2,14 @@ package comulez.github.uimageloader;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.support.v4.util.LruCache;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 import static comulez.github.uimageloader.Utils.keyFormUrl;
@@ -55,11 +55,11 @@ public class ImageCache implements IImageCacahe {
         } else {
             cachePath = context.getCacheDir().getPath();
         }
-        Log.i(TAG, cachePath + File.separator + uniqueName);
+//        Log.i(TAG, cachePath + File.separator + uniqueName);
         return new File(cachePath + File.separator + uniqueName);
     }
 
-    private void addToDiskCache(Bitmap bitmap, String key) throws IOException {
+    public void addToDiskCache(Bitmap bitmap, String key) throws IOException {
         DiskLruCache.Editor editor = diskLruCache.edit(key);
         if (editor != null) {
             OutputStream outputStream = editor.newOutputStream(DISK_CACHE_INDEX);
@@ -88,6 +88,8 @@ public class ImageCache implements IImageCacahe {
         return lruCache.get(key);
     }
 
+    private ImageResizer mImageResizer = new ImageResizer();
+
     @Override
     public Bitmap getFromCache(String url, int width, int height) {
         String key = keyFormUrl(url);
@@ -95,11 +97,12 @@ public class ImageCache implements IImageCacahe {
         if (bitmap == null) {
             try {
                 DiskLruCache.Snapshot snapShot = diskLruCache.get(key);
-                Log.i(TAG, "getFromDiskCache,key=" + key + ",value=" + snapShot);
                 if (snapShot != null) {
-                    InputStream is = snapShot.getInputStream(DISK_CACHE_INDEX);
-                    bitmap = BitmapFactory.decodeStream(is);
-                    is.close();
+                    FileInputStream fileInputStream = (FileInputStream) snapShot.getInputStream(DISK_CACHE_INDEX);
+                    FileDescriptor fileDescriptor = fileInputStream.getFD();
+                    bitmap = mImageResizer.decodeSampledBitmapFromFileDescriptor(fileDescriptor, width, height);
+                    if (bitmap != null)
+                        addToCache(bitmap, url);
                     return bitmap;
                 }
             } catch (IOException e) {

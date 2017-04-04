@@ -93,10 +93,11 @@ public class ImageLoader {
             final URL url = new URL(urlString);
             urlConnection = (HttpURLConnection) url.openConnection();
             in = new BufferedInputStream(urlConnection.getInputStream(), IO_BUFFER_SIZE);
-            BitmapFactory.Options opts = new BitmapFactory.Options();
-            opts.inSampleSize = getSampleSize(BitmapFactory.decodeStream(in), width, height);//// TODO: 2017/4/1  不能decodeStream两次，如何获取BitmapFactory.Options?
-            bitmap = BitmapFactory.decodeStream(in, null, opts);
-//            bitmap = BitmapFactory.decodeStream(in);
+            bitmap = BitmapFactory.decodeStream(in);
+            if (cache instanceof ImageCache)
+                ((ImageCache) cache).addToDiskCache(bitmap, Utils.keyFormUrl(urlString));
+            bitmap.recycle();
+            bitmap = cache.getFromCache(urlString, width, height);// TODO: 2017/4/4  这里因为第一次下载的原图需要重新采样获取需求大小的bitmap，而BitmapFactory.decodeStream(in),不能decode两次。第二次会为null。
         } catch (final IOException e) {
             Log.e(TAG, "Error in downloadBitmap: " + e);
         } finally {
@@ -109,7 +110,6 @@ public class ImageLoader {
     }
 
     /**
-     *
      * @param bitmap
      * @param width
      * @param height
