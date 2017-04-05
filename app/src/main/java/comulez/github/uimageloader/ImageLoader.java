@@ -117,18 +117,6 @@ public class ImageLoader {
         return bitmap;
     }
 
-    /**
-     * @param bitmap
-     * @param width
-     * @param height
-     * @return
-     */
-    private int getSampleSize(Bitmap bitmap, int width, int height) {
-//        bitmap.recycle();
-        int simpleSize = 1;
-        return simpleSize;
-    }
-
     public ImageLoader url(final String url, final ImageView target) {
         if (defaultImgRes != 0)
             target.setImageResource(defaultImgRes);
